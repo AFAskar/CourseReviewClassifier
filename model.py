@@ -5,44 +5,40 @@ from nltk.corpus import stopwords
 import joblib
 from pathlib import Path
 from transformers import AutoTokenizer
-import torch
-import torch.nn as nn
+import pandas as pd
 import numpy as np
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
 import json
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    accuracy_score,
+    precision_recall_fscore_support,
+    confusion_matrix,
+)
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 
 cache_dir = Path("./.cache")
 
 memory = joblib.Memory(location=cache_dir, verbose=0)
 
 
-class JsonDataset(Dataset):
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        return self.data[idx]
-
-
-# load json and return torch dataset
-def load_data(file: Path) -> JsonDataset:
+def load_and_flatten(file: Path) -> pd.DataFrame:
     """
-    Load Data From json file
+    Load a JSON file and flatten its structure into a pandas DataFrame.
+
     Args:
-        file (Path): Path to the json file.
+        file (Path): Path to the JSON file.
     Returns:
-        Dataset: Loaded dataset.
+        pd.DataFrame: Flattened DataFrame.
     """
-
-    with open(file, "r") as f:
-        data = json.load(f)
-    # print data variable datatype
-    print(type(data))
-    return JsonDataset(data)
+    data = json.load(open(file, "r"))
+    df = pd.DataFrame(data).T
+    df.reset_index(inplace=True)
+    df.rename(columns={"index": "course_id"}, inplace=True)
+    return df
 
 
 def text_preproccessing(text: str) -> str:
@@ -79,6 +75,4 @@ def text_preproccessing(text: str) -> str:
 
 if __name__ == "__main__":
     json_file = Path("./course_data.json")
-    dataset = load_data(json_file)
-    print(f"Loaded {len(dataset)} samples from {json_file}")
-    print("First sample:", dataset[0])
+    df = load_and_flatten(json_file)
