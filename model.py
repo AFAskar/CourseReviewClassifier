@@ -62,9 +62,16 @@ def text_preproccessing(text: str) -> str:
     Returns:
         str: The preprocessed text.
     """
+    # handle non-string or empty inputs gracefully
+    if not isinstance(text, str) or not text:
+        return ""
     text = text.casefold()
-    alphanum = r"[^a-zA-Z0-9\s]+$"
-    text = re.sub(alphanum, "", text)
+    # remove punctuation/special characters globally (not only at end)
+    alphanum = r"[^a-zA-Z0-9\s]+"
+    # replace punctuation with space to avoid joining words
+    text = re.sub(alphanum, " ", text)
+    # collapse multiple whitespace into a single space
+    text = re.sub(r"\s+", " ", text)
 
     # remove stopwords
     stop_words = set(stopwords.words("english"))
