@@ -52,6 +52,7 @@ def load_data(file: Path) -> pd.DataFrame:
     return reviews_df
 
 
+@memory.cache
 def text_preproccessing(text: str) -> str:
     """
     Preprocess the input text by converting it to lowercase and removing punctuation.
@@ -80,6 +81,7 @@ def preprocess_reviews(reviews_df: pd.DataFrame) -> pd.DataFrame:
     return reviews_df
 
 
+@memory.cache
 def embed_reviews(
     reviews: pd.Series, model_name: str = "all-MiniLM-L6-v2"
 ) -> np.ndarray:
@@ -97,8 +99,24 @@ def embed_reviews(
     return embeddings
 
 
+def run():
+    data_file = Path("./course_data.json")
+    reviews_df = load_data(data_file)
+    reviews_df = preprocess_reviews(reviews_df)
+    scores = train(reviews_df)
+    for name, score in scores.items():
+        print(f"Classifier: {name}")
+        print(f"Accuracy: {score['accuracy']:.4f}")
+        print(f"Precision: {score['precision']:.4f}")
+        print(f"Recall: {score['recall']:.4f}")
+        print(f"F1-Score: {score['f1-score']:.4f}")
+        print(f"Confusion Matrix:\n{score['confusion_matrix']}\n")
+    print("Comparison of Classifier Performance:")
+    compare_scores(scores)
+
+
 @memory.cache
-def run(reviews_df: pd.DataFrame):
+def train(reviews_df: pd.DataFrame):
     X = embed_reviews(reviews_df["text"])
     y = reviews_df["label"].values
     X_train, X_test, y_train, y_test = train_test_split(
@@ -144,16 +162,4 @@ def compare_scores(scores: dict) -> None:
 
 
 if __name__ == "__main__":
-    data_file = Path("./course_data.json")
-    reviews_df = load_data(data_file)
-    reviews_df = preprocess_reviews(reviews_df)
-    scores = run(reviews_df)
-    for name, score in scores.items():
-        print(f"Classifier: {name}")
-        print(f"Accuracy: {score['accuracy']:.4f}")
-        print(f"Precision: {score['precision']:.4f}")
-        print(f"Recall: {score['recall']:.4f}")
-        print(f"F1-Score: {score['f1-score']:.4f}")
-        print(f"Confusion Matrix:\n{score['confusion_matrix']}\n")
-    print("Comparison of Classifier Scores:")
-    compare_scores(scores)
+    run()
